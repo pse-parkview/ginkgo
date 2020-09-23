@@ -123,7 +123,7 @@ struct matrix_assembly_data {
     using value_type = ValueType;
     using index_type = IndexType;
 
-    matrix_assembly_data(const dim<2> size_ = dim<2>{})
+    matrix_assembly_data(dim<2> size_ = dim<2>{})
         : size{size_},
           nonzeros{0, detail::symbolic_nonzero_hash<index_type>(size[1])}
     {}
@@ -165,7 +165,7 @@ struct matrix_assembly_data {
     /**
      * Size of the matrix.
      */
-    const dim<2> size;
+    dim<2> size;
 
     /**
      * An unordered map storing the non-zeros of the matrix.
