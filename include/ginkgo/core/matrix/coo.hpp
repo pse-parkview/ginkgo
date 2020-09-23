@@ -81,7 +81,8 @@ class Coo : public EnableLinOp<Coo<ValueType, IndexType>>,
             public ConvertibleTo<Dense<ValueType>>,
             public DiagonalExtractable<ValueType>,
             public ReadableFromMatrixData<ValueType, IndexType>,
-            public WritableToMatrixData<ValueType, IndexType> {
+            public WritableToMatrixData<ValueType, IndexType>,
+            public ReadableFromMatrixAssemblyData<ValueType, IndexType> {
     friend class EnableCreateMethod<Coo>;
     friend class EnablePolymorphicObject<Coo, LinOp>;
     friend class Csr<ValueType, IndexType>;
@@ -95,6 +96,7 @@ public:
     using value_type = ValueType;
     using index_type = IndexType;
     using mat_data = matrix_data<ValueType, IndexType>;
+    using mat_assembly_data = matrix_assembly_data<ValueType, IndexType>;
 
     friend class Coo<next_precision<ValueType>, IndexType>;
 
@@ -114,6 +116,8 @@ public:
     void read(const mat_data &data) override;
 
     void write(mat_data &data) const override;
+
+    void read(const mat_assembly_data &data) override;
 
     std::unique_ptr<Diagonal<ValueType>> extract_diagonal() const override;
 

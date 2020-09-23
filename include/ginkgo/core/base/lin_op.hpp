@@ -42,6 +42,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ginkgo/core/base/abstract_factory.hpp>
 #include <ginkgo/core/base/dim.hpp>
 #include <ginkgo/core/base/exception_helpers.hpp>
+#include <ginkgo/core/base/matrix_assembly_data.hpp>
 #include <ginkgo/core/base/matrix_data.hpp>
 #include <ginkgo/core/base/polymorphic_object.hpp>
 #include <ginkgo/core/base/types.hpp>
@@ -560,6 +561,30 @@ public:
      * @param data  the matrix_data structure
      */
     virtual void write(matrix_data<ValueType, IndexType> &data) const = 0;
+};
+
+
+/**
+ * A LinOp implementing this interface can read its data from a
+ * matrix_assembly_data structure.
+ *
+ * @ingroup LinOp
+ */
+template <typename ValueType, typename IndexType>
+class ReadableFromMatrixAssemblyData {
+public:
+    using value_type = ValueType;
+    using index_type = IndexType;
+
+    virtual ~ReadableFromMatrixAssemblyData() = default;
+
+    /**
+     * Reads a matrix from a matrix_data structure.
+     *
+     * @param data  the matrix_data structure
+     */
+    virtual void read(
+        const matrix_assembly_data<ValueType, IndexType> &data) = 0;
 };
 
 

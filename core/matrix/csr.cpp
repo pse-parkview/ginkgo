@@ -352,6 +352,39 @@ void Csr<ValueType, IndexType>::write(mat_data &data) const
 
 
 template <typename ValueType, typename IndexType>
+void Csr<ValueType, IndexType>::read(const mat_assembly_data &data)
+{
+    size_type nnz = 0;
+    const auto ordered_nonzeros = data.get_ordered_data();
+    for (const auto &entry : ordered_nonzeros) {
+        nnz += (entry.second != zero<ValueType>());
+    }
+    auto tmp = Csr::create(this->get_executor()->get_master(), data.size, nnz,
+                           this->get_strategy());
+    size_type cur_ptr = 0;
+    size_type row = 0;
+    tmp->get_row_ptrs()[0] = cur_ptr;
+    for (const auto &entry : ordered_nonzeros) {
+        const auto row_idx = entry.first.row;
+        const auto col_idx = entry.first.column;
+        const auto val = entry.second;
+        if (val != zero<ValueType>()) {
+            while (row < row_idx) {
+                tmp->get_row_ptrs()[row + 1] = cur_ptr;
+                row++;
+            }
+            tmp->get_values()[cur_ptr] = val;
+            tmp->get_col_idxs()[cur_ptr] = col_idx;
+            cur_ptr++;
+        }
+    }
+    tmp->get_row_ptrs()[data.size[0]] = nnz;
+    tmp->make_srow();
+    tmp->move_to(this);
+}
+
+
+template <typename ValueType, typename IndexType>
 std::unique_ptr<LinOp> Csr<ValueType, IndexType>::transpose() const
 {
     auto exec = this->get_executor();

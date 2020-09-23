@@ -513,7 +513,7 @@ namespace {
 
 
 template <typename MatrixType, typename MatrixData>
-inline void read_impl(MatrixType *mtx, const MatrixData &data)
+inline void read_mat_data_impl(MatrixType *mtx, const MatrixData &data)
 {
     auto tmp = MatrixType::create(mtx->get_executor()->get_master(), data.size);
     size_type ind = 0;
@@ -538,14 +538,14 @@ inline void read_impl(MatrixType *mtx, const MatrixData &data)
 template <typename ValueType>
 void Dense<ValueType>::read(const mat_data &data)
 {
-    read_impl(this, data);
+    read_mat_data_impl(this, data);
 }
 
 
 template <typename ValueType>
 void Dense<ValueType>::read(const mat_data32 &data)
 {
-    read_impl(this, data);
+    read_mat_data_impl(this, data);
 }
 
 
@@ -590,6 +590,48 @@ template <typename ValueType>
 void Dense<ValueType>::write(mat_data32 &data) const
 {
     write_impl(this, data);
+}
+
+
+namespace {
+
+
+template <typename MatrixType, typename MatrixAssemblyData>
+inline void read_mat_assembly_data_impl(MatrixType *mtx,
+                                        const MatrixAssemblyData &data)
+{
+    auto tmp = MatrixType::create(mtx->get_executor()->get_master(), data.size);
+    const auto ordered_nonzeros = data.get_ordered_data();
+    auto entry = ordered_nonzeros.begin();
+    for (size_type row = 0; row < data.size[0]; ++row) {
+        for (size_type col = 0; col < data.size[1]; ++col) {
+            if (entry != ordered_nonzeros.end() && entry->first.row == row &&
+                entry->first.column == col) {
+                tmp->at(row, col) = entry->second;
+                entry++;
+            } else {
+                tmp->at(row, col) = zero<typename MatrixType::value_type>();
+            }
+        }
+    }
+    tmp->move_to(mtx);
+}
+
+
+}  // namespace
+
+
+template <typename ValueType>
+void Dense<ValueType>::read(const mat_assembly_data &data)
+{
+    read_mat_assembly_data_impl(this, data);
+}
+
+
+template <typename ValueType>
+void Dense<ValueType>::read(const mat_assembly_data32 &data)
+{
+    read_mat_assembly_data_impl(this, data);
 }
 
 

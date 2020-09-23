@@ -108,6 +108,8 @@ class Dense : public EnableLinOp<Dense<ValueType>>,
               public ReadableFromMatrixData<ValueType, int64>,
               public WritableToMatrixData<ValueType, int32>,
               public WritableToMatrixData<ValueType, int64>,
+              public ReadableFromMatrixAssemblyData<ValueType, int32>,
+              public ReadableFromMatrixAssemblyData<ValueType, int64>,
               public Transposable,
               public Permutable<int32>,
               public Permutable<int64> {
@@ -136,6 +138,8 @@ public:
     using transposed_type = Dense<ValueType>;
     using mat_data = gko::matrix_data<ValueType, int64>;
     using mat_data32 = gko::matrix_data<ValueType, int32>;
+    using mat_assembly_data = gko::matrix_assembly_data<ValueType, int64>;
+    using mat_assembly_data32 = gko::matrix_assembly_data<ValueType, int32>;
 
     using row_major_range = gko::range<gko::accessor::row_major<ValueType, 2>>;
 
@@ -214,6 +218,10 @@ public:
     void write(mat_data &data) const override;
 
     void write(mat_data32 &data) const override;
+
+    void read(const mat_assembly_data &data) override;
+
+    void read(const mat_assembly_data32 &data) override;
 
     std::unique_ptr<LinOp> transpose() const override;
 

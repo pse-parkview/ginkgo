@@ -76,6 +76,7 @@ class Hybrid
       public ConvertibleTo<Csr<ValueType, IndexType>>,
       public DiagonalExtractable<ValueType>,
       public ReadableFromMatrixData<ValueType, IndexType>,
+      public ReadableFromMatrixAssemblyData<ValueType, IndexType>,
       public WritableToMatrixData<ValueType, IndexType> {
     friend class EnableCreateMethod<Hybrid>;
     friend class EnablePolymorphicObject<Hybrid, LinOp>;
@@ -89,6 +90,7 @@ public:
     using value_type = ValueType;
     using index_type = IndexType;
     using mat_data = matrix_data<ValueType, IndexType>;
+    using mat_assembly_data = matrix_assembly_data<ValueType, IndexType>;
     using coo_type = Coo<ValueType, IndexType>;
     using ell_type = Ell<ValueType, IndexType>;
 
@@ -354,6 +356,8 @@ public:
     void read(const mat_data &data) override;
 
     void write(mat_data &data) const override;
+
+    void read(const mat_assembly_data &data) override;
 
     std::unique_ptr<Diagonal<ValueType>> extract_diagonal() const override;
 

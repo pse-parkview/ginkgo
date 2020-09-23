@@ -128,6 +128,7 @@ class Csr : public EnableLinOp<Csr<ValueType, IndexType>>,
             public DiagonalExtractable<ValueType>,
             public ReadableFromMatrixData<ValueType, IndexType>,
             public WritableToMatrixData<ValueType, IndexType>,
+            public ReadableFromMatrixAssemblyData<ValueType, IndexType>,
             public Transposable,
             public Permutable<IndexType> {
     friend class EnableCreateMethod<Csr>;
@@ -145,6 +146,7 @@ public:
     using index_type = IndexType;
     using transposed_type = Csr<ValueType, IndexType>;
     using mat_data = matrix_data<ValueType, IndexType>;
+    using mat_assembly_data = matrix_assembly_data<ValueType, IndexType>;
 
     class automatical;
 
@@ -682,6 +684,8 @@ public:
     void read(const mat_data &data) override;
 
     void write(mat_data &data) const override;
+
+    void read(const mat_assembly_data &data) override;
 
     std::unique_ptr<LinOp> transpose() const override;
 

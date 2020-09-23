@@ -35,6 +35,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 #include <algorithm>
+#include <map>
 #include <numeric>
 #include <tuple>
 #include <unordered_map>
@@ -127,15 +128,38 @@ struct matrix_assembly_data {
           nonzeros{0, detail::symbolic_nonzero_hash<index_type>(size[1])}
     {}
 
-    void insert_value(index_type row, index_type col, value_type val,
-                      bool add = false)
+    /**
+     * Sets the matrix value at (row, col).
+     * If add is false, sets the matrix entry to val, overwriting any previous
+     * value. If add is true, adds val to the existing entry or, if there is
+     * no entry yet, sets the matrix entry to val.
+     */
+    void set_value(index_type row, index_type col, value_type val,
+                   bool add = false)
     {
         auto ind = detail::symbolic_nonzero<index_type>(row, col);
         auto inserted = nonzeros.insert({ind, val});
 
-        if (add && !inserted.second) {
-            nonzeros.at(ind) += val;
+        if (!inserted.second) {
+            if (add) {
+                nonzeros.at(ind) += val;
+            } else {
+                nonzeros.at(ind) = val;
+            }
         }
+    }
+
+
+    /**
+     * Returns an std::map with the matrix values ordered first by row and
+     * then by column. This should be called when reading a sparse matrix format
+     * from matrix_assembly_data to ensure a row major order.
+     */
+    const std::map<detail::symbolic_nonzero<index_type>, value_type>
+    get_ordered_data() const
+    {
+        return std::map<detail::symbolic_nonzero<index_type>, value_type>(
+            nonzeros.begin(), nonzeros.end());
     }
 
     /**

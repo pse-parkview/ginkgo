@@ -90,6 +90,27 @@ size_type calculate_max_nnz_per_row(
 }
 
 
+template <typename ValueType, typename IndexType>
+size_type calculate_max_nnz_per_row(
+    const std::map<gko::detail::symbolic_nonzero<IndexType>, ValueType>
+        &ordered_nonzeros)
+{
+    size_type nnz = 0;
+    IndexType current_row = 0;
+    size_type num_stored_elements_per_row = 0;
+    for (const auto &entry : ordered_nonzeros) {
+        if (entry.first.row != current_row) {
+            current_row = entry.first.row;
+            num_stored_elements_per_row =
+                std::max(num_stored_elements_per_row, nnz);
+            nnz = 0;
+        }
+        nnz += (entry.second != zero<ValueType>());
+    }
+    return std::max(num_stored_elements_per_row, nnz);
+}
+
+
 }  // namespace
 
 
@@ -235,6 +256,42 @@ void Ell<ValueType, IndexType>::write(mat_data &data) const
     }
 }
 
+
+template <typename ValueType, typename IndexType>
+void Ell<ValueType, IndexType>::read(const mat_assembly_data &data)
+{
+    const auto ordered_nonzeros = data.get_ordered_data();
+    // Get the number of stored elements of every row.
+    auto num_stored_elements_per_row =
+        calculate_max_nnz_per_row(ordered_nonzeros);
+
+    // Create an ELLPACK format matrix based on the sizes.
+    auto tmp = Ell::create(this->get_executor()->get_master(), data.size,
+                           num_stored_elements_per_row, data.size[0]);
+
+    // Get values and column indexes.
+    size_type col = 0;
+    auto entry = ordered_nonzeros.begin();
+
+    for (size_type row = 0; row < data.size[0]; row++) {
+        while (entry->first.row == row) {
+            if (entry->second != zero<ValueType>()) {
+                tmp->val_at(row, col) = entry->second;
+                tmp->col_at(row, col) = entry->first.column;
+                col++;
+            }
+            entry++;
+        }
+        for (size_type i = col; i < num_stored_elements_per_row; i++) {
+            tmp->val_at(row, i) = zero<ValueType>();
+            tmp->col_at(row, i) = 0;
+        }
+        col = 0;
+    }
+
+    // Return the matrix
+    tmp->move_to(this);
+}
 
 template <typename ValueType, typename IndexType>
 std::unique_ptr<Diagonal<ValueType>>

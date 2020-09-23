@@ -31,7 +31,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************<GINKGO LICENSE>*******************************/
 
 #include <ginkgo/core/base/matrix_assembly_data.hpp>
-
+#include <iostream>
 
 #include <gtest/gtest.h>
 
@@ -61,10 +61,10 @@ TEST(MatrixAssemblyData, InsertsValuesWithoutAdding)
 {
     gko::matrix_assembly_data<double, int> m(gko::dim<2>{3, 5});
 
-    m.insert_value(0, 0, 1.3);
-    m.insert_value(2, 3, 2.2);
-    m.insert_value(1, 4, 1.1);
-    m.insert_value(1, 2, 3.6);
+    m.set_value(0, 0, 1.3);
+    m.set_value(2, 3, 2.2);
+    m.set_value(1, 4, 1.1);
+    m.set_value(1, 2, 3.6);
 
     ASSERT_EQ(m.size, gko::dim<2>(3, 5));
     ASSERT_EQ(m.nonzeros.size(), 4);
@@ -79,12 +79,12 @@ TEST(MatrixAssemblyData, InsertsValuesWithAdding)
 {
     gko::matrix_assembly_data<double, int> m(gko::dim<2>{3, 5});
 
-    m.insert_value(0, 0, 1.3, true);
-    m.insert_value(2, 3, 2.2, true);
-    m.insert_value(1, 4, 1.1, true);
-    m.insert_value(1, 2, 3.6, true);
-    m.insert_value(1, 4, 9.1, true);
-    m.insert_value(2, 3, 1.3, true);
+    m.set_value(0, 0, 1.3, true);
+    m.set_value(2, 3, 2.2, true);
+    m.set_value(1, 4, 1.1, true);
+    m.set_value(1, 2, 3.6, true);
+    m.set_value(1, 4, 9.1, true);
+    m.set_value(2, 3, 1.3, true);
 
     ASSERT_EQ(m.size, gko::dim<2>(3, 5));
     ASSERT_EQ(m.nonzeros.size(), 4);
@@ -92,6 +92,44 @@ TEST(MatrixAssemblyData, InsertsValuesWithAdding)
     ASSERT_EQ(m.nonzeros.at({2, 3}), 3.5);
     ASSERT_EQ(m.nonzeros.at({1, 4}), 10.2);
     ASSERT_EQ(m.nonzeros.at({1, 2}), 3.6);
+}
+
+
+TEST(MatrixAssemblyData, OverwritesValuesWhenNotAdding)
+{
+    gko::matrix_assembly_data<double, int> m(gko::dim<2>{3, 5});
+
+    m.set_value(0, 0, 1.3);
+    m.set_value(2, 3, 2.2);
+    m.set_value(1, 4, 1.1);
+    m.set_value(1, 2, 3.6);
+    m.set_value(1, 4, 9.1);
+    m.set_value(2, 3, 1.4);
+
+    ASSERT_EQ(m.size, gko::dim<2>(3, 5));
+    ASSERT_EQ(m.nonzeros.size(), 4);
+    ASSERT_EQ(m.nonzeros.at({0, 0}), 1.3);
+    ASSERT_EQ(m.nonzeros.at({2, 3}), 1.4);
+    ASSERT_EQ(m.nonzeros.at({1, 4}), 9.1);
+    ASSERT_EQ(m.nonzeros.at({1, 2}), 3.6);
+}
+
+
+TEST(MatrixAssemblyData, GetsSortedData)
+{
+    gko::matrix_assembly_data<double, int> m(gko::dim<2>{3, 5});
+
+    m.set_value(0, 0, 1.3);
+    m.set_value(2, 3, 2.2);
+    m.set_value(1, 4, 1.1);
+    m.set_value(1, 2, 3.6);
+
+    auto sorted = m.get_ordered_data();
+
+    for (auto i = sorted.begin(); i != sorted.end(); i++) {
+        std::cout << i->first.row << " x " << i->first.column << ": "
+                  << i->second << "\n";
+    }
 }
 
 

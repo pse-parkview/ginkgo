@@ -219,6 +219,31 @@ void Coo<ValueType, IndexType>::write(mat_data &data) const
 
 
 template <typename ValueType, typename IndexType>
+void Coo<ValueType, IndexType>::read(const mat_assembly_data &data)
+{
+    size_type nnz = 0;
+    const auto ordered_nonzeros = data.get_ordered_data();
+    for (const auto &entry : ordered_nonzeros) {
+        nnz += (entry.second != zero<ValueType>());
+    }
+    auto tmp = Coo::create(this->get_executor()->get_master(), data.size, nnz);
+    size_type cur_ptr = 0;
+    for (const auto &entry : ordered_nonzeros) {
+        const auto row_idx = entry.first.row;
+        const auto col_idx = entry.first.column;
+        const auto val = entry.second;
+        if (val != zero<ValueType>()) {
+            tmp->get_values()[cur_ptr] = val;
+            tmp->get_col_idxs()[cur_ptr] = col_idx;
+            tmp->get_row_idxs()[cur_ptr] = row_idx;
+            cur_ptr++;
+        }
+    }
+    tmp->move_to(this);
+}
+
+
+template <typename ValueType, typename IndexType>
 std::unique_ptr<Diagonal<ValueType>>
 Coo<ValueType, IndexType>::extract_diagonal() const
 {

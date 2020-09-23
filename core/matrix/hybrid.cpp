@@ -90,6 +90,29 @@ void get_each_row_nnz(const matrix_data<ValueType, IndexType> &data,
 }
 
 
+template <typename ValueType, typename IndexType>
+void get_each_row_nnz(const std::map<gko::detail::symbolic_nonzero<IndexType>,
+                                     ValueType> &ordered_nonzeros,
+                      Array<size_type> &row_nnz)
+{
+    size_type nnz = 0;
+    IndexType current_row = 0;
+    auto row_nnz_val = row_nnz.get_data();
+    for (size_type i = 0; i < row_nnz.get_num_elems(); i++) {
+        row_nnz_val[i] = zero<size_type>();
+    }
+    for (const auto &entry : ordered_nonzeros) {
+        if (entry.first.row != current_row) {
+            row_nnz_val[current_row] = nnz;
+            current_row = entry.first.row;
+            nnz = 0;
+        }
+        nnz += (entry.second != zero<ValueType>());
+    }
+    row_nnz_val[current_row] = nnz;
+}
+
+
 }  // namespace
 
 
@@ -266,6 +289,65 @@ void Hybrid<ValueType, IndexType>::write(mat_data &data) const
             coo_ind++;
         }
     }
+}
+
+
+template <typename ValueType, typename IndexType>
+void Hybrid<ValueType, IndexType>::read(const mat_assembly_data &data)
+{
+    // get the limitation of columns of the ell part
+    // calculate coo storage
+    size_type ell_lim = zero<size_type>();
+    size_type coo_lim = zero<size_type>();
+    Array<size_type> row_nnz(this->get_executor()->get_master(), data.size[0]);
+    const auto ordered_nonzeros = data.get_ordered_data();
+    get_each_row_nnz(ordered_nonzeros, row_nnz);
+    strategy_->compute_hybrid_config(row_nnz, &ell_lim, &coo_lim);
+
+    auto tmp =
+        Hybrid::create(this->get_executor()->get_master(), data.size, ell_lim,
+                       data.size[0], coo_lim, this->get_strategy());
+
+    // Get values and column indexes.
+    auto coo_vals = tmp->get_coo_values();
+    auto coo_col_idxs = tmp->get_coo_col_idxs();
+    auto coo_row_idxs = tmp->get_coo_row_idxs();
+    size_type coo_ind = 0;
+    auto entry = ordered_nonzeros.begin();
+    for (size_type row = 0; row < data.size[0]; row++) {
+        size_type col = 0;
+
+        // ell_part
+        while (entry != ordered_nonzeros.end() && entry->first.row == row &&
+               col < ell_lim) {
+            auto val = entry->second;
+            if (val != zero<ValueType>()) {
+                tmp->ell_val_at(row, col) = val;
+                tmp->ell_col_at(row, col) = entry->first.column;
+                col++;
+            }
+            entry++;
+        }
+        for (auto i = col; i < ell_lim; i++) {
+            tmp->ell_val_at(row, i) = zero<ValueType>();
+            tmp->ell_col_at(row, i) = 0;
+        }
+
+        // coo_part
+        while (entry != ordered_nonzeros.end() && entry->first.row == row) {
+            auto val = entry->second;
+            if (val != zero<ValueType>()) {
+                coo_vals[coo_ind] = val;
+                coo_col_idxs[coo_ind] = entry->first.column;
+                coo_row_idxs[coo_ind] = entry->first.row;
+                coo_ind++;
+            }
+            entry++;
+        }
+    }
+
+    // Return the matrix
+    tmp->move_to(this);
 }
 
 
