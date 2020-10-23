@@ -837,7 +837,7 @@ void scale(std::shared_ptr<const OmpExecutor> exec,
     const auto nnz = to_scale->get_num_stored_elements();
     auto values = to_scale->get_values();
 
-#pragma parallel for
+#pragma omp parallel for
     for (size_type idx = 0; idx < nnz; idx++) {
         values[idx] *= alpha->at(0, 0);
     }
