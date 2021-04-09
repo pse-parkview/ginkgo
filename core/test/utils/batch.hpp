@@ -51,7 +51,7 @@ namespace test {
  * @param nbatch  The number of Poisson matrices in the batch
  */
 template <typename ValueType>
-std::shared_ptr<matrix::BatchCsr<ValueType, int>> create_poisson1d_batch(
+std::unique_ptr<matrix::BatchCsr<ValueType, int>> create_poisson1d_batch(
     std::shared_ptr<const ReferenceExecutor> exec, const int nrows,
     const size_type nbatch)
 {
