@@ -31,8 +31,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************<GINKGO LICENSE>*******************************/
 
 
-namespace batch_csr {
-
 /**
  * Device kernel for SpMV of one CSR matrix in a batch.
  *
@@ -85,5 +83,3 @@ __device__ __forceinline__ void adv_spmv_ker(
         }
     }
 }
-
-}  // namespace batch_csr
