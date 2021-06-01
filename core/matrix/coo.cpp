@@ -72,7 +72,7 @@ GKO_REGISTER_OPERATION(inplace_absolute_array,
                        components::inplace_absolute_array);
 GKO_REGISTER_OPERATION(outplace_absolute_array,
                        components::outplace_absolute_array);
-// GKO_REGISTER_OPERATION(mem_size_bccoo, coo::mem_size_bccoo);
+GKO_REGISTER_OPERATION(mem_size_bccoo, coo::mem_size_bccoo);
 
 
 }  // namespace coo
@@ -193,28 +193,31 @@ void Coo<ValueType, IndexType>::convert_to(
     auto exec = this->get_executor();
     auto num_stored_elements = this->get_num_stored_elements();
 
-    const auto block_size = 1024;
+    // COMMENT Don't use `auto` with literals, especially if you want to get
+    //         a specific type (like `size_type` here)
+    const size_type block_size = 1024;
     //		const auto block_size = Bccoo<ValueType,
     // IndexType>::compute_block_size(
     // result->get_executor(), this.size(), num_stored_elements);
     const auto num_blocks = ceildiv(num_stored_elements, block_size);
 
+    // COMMENT a underscore suffix is reserved for private variables inside a
+    //         class
     Array<IndexType> rows_(exec, num_blocks);
     Array<IndexType> offsets_(exec, num_blocks + 1);
 
     size_type mem_size{};
     if (exec == exec->get_master()) {
         exec->run(coo::make_mem_size_bccoo(
-            //			mem_size_bccoo(
             this->get_const_row_idxs(), this->get_const_col_idxs(),
-            //				this->get_size()[0], rows_, offsets_,
-            // block_size, &mem_size);
-            this->get_size()[0], rows_, offsets_, block_size, &mem_size));
+            this->get_size()[0], rows_.get_data(), offsets_.get_data(),
+            block_size, &mem_size));
     } else {
         auto host_coo = clone(exec->get_master(), this);
         exec->run(coo::make_mem_size_bccoo(
             host_coo->get_const_row_idxs(), host_coo->get_const_col_idxs(),
-            host_coo->get_size()[0], rows_, offsets_, block_size, &mem_size));
+            host_coo->get_size()[0], rows_.get_data(), offsets_.get_data(),
+            block_size, &mem_size));
     }
 
     Array<uint8> data_(exec, mem_size);

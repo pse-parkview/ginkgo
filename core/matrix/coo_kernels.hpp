@@ -93,11 +93,11 @@ namespace kernels {
                           const matrix::Coo<ValueType, IndexType> *orig, \
                           matrix::Diagonal<ValueType> *diag)
 
-#define GKO_DECLARE_MEM_SIZE_BCCOO_KERNEL(ValueType, IndexType)               \
-    void mem_size_bccoo(std::shared_ptr<const ReferenceExecutor> exec,        \
+#define GKO_DECLARE_MEM_SIZE_BCCOO_KERNEL(IndexType)                          \
+    void mem_size_bccoo(std::shared_ptr<const DefaultExecutor> exec,          \
                         const IndexType *row_idxs, const IndexType *col_idxs, \
-                        const size_type num_rows, IndexType rows,             \
-                        IndexType offsets, const size_type block_size,        \
+                        const size_type num_rows, IndexType *rows,            \
+                        IndexType *offsets, const size_type block_size,       \
                         size_type *mem_size)
 
 #define GKO_DECLARE_ALL_AS_TEMPLATES                               \
@@ -117,8 +117,8 @@ namespace kernels {
     GKO_DECLARE_COO_CONVERT_TO_DENSE_KERNEL(ValueType, IndexType); \
     template <typename ValueType, typename IndexType>              \
     GKO_DECLARE_COO_EXTRACT_DIAGONAL_KERNEL(ValueType, IndexType); \
-    template <typename ValueType, typename IndexType>              \
-    GKO_DECLARE_MEM_SIZE_BCCOO_KERNEL(ValueType, IndexType)
+    template <typename IndexType>                                  \
+    GKO_DECLARE_MEM_SIZE_BCCOO_KERNEL(IndexType)
 
 
 namespace omp {

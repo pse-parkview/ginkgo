@@ -144,15 +144,17 @@ void convert_row_idxs_to_ptrs(std::shared_ptr<const ReferenceExecutor> exec,
 }
 
 
-template <typename ValueType, typename IndexType>
+template <typename IndexType>
 void mem_size_bccoo(std::shared_ptr<const ReferenceExecutor> exec,
                     const IndexType *row_idxs, const IndexType *col_idxs,
-                    const size_type num_rows, IndexType rows, IndexType offsets,
-                    const size_type block_size,
-                    size_type *mem_size)  // GKO_NOT_IMPLEMENTED;
-/* */
+                    const size_type num_rows, IndexType *rows,
+                    IndexType *offsets, const size_type block_size,
+                    size_type *mem_size) GKO_NOT_IMPLEMENTED;
+/*
 {
+    // why are you trying to use a plain pointer as an object?
     size_type num_stored_elements = row_idxs.size();
+    // `rows` MUST be a pointer, you can't use a `gko::Array` inside a kernel
     size_type num_blocks = rows.size();
     size_type p = 0;
     offsets[0] = 0;
@@ -182,21 +184,19 @@ void mem_size_bccoo(std::shared_ptr<const ReferenceExecutor> exec,
         offsets[b + 1] = p;
     }
 }
-/* */
+//*/
 
 
-GKO_INSTANTIATE_FOR_EACH_VALUE_AND_INDEX_TYPE(
-    GKO_DECLARE_MEM_SIZE_BCCOO_KERNEL);
+GKO_INSTANTIATE_FOR_EACH_INDEX_TYPE(GKO_DECLARE_MEM_SIZE_BCCOO_KERNEL);
 
 
 template <typename ValueType, typename IndexType>
 void fill_bccoo(std::shared_ptr<const ReferenceExecutor> exec,
                 const IndexType *row_idxs, const IndexType *col_idxs,
-                const Valuetype *values, const size_type num_rows,
+                const ValueType *values, const size_type num_rows,
                 const IndexType *rows, const IndexType *offsets, uint8 *data,
-                const size_type block_size)
-// GKO_NOT_IMPLEMENTED;
-/* */
+                const size_type block_size) GKO_NOT_IMPLEMENTED;
+/*
 {
     size_type num_stored_elements = row_idxs.size();
     size_type num_blocks = rows.size();
@@ -240,9 +240,9 @@ void fill_bccoo(std::shared_ptr<const ReferenceExecutor> exec,
 template <typename ValueType, typename IndexType>
 void convert_to_bccoo(std::shared_ptr<const ReferenceExecutor> exec,
                       const matrix::Coo<ValueType, IndexType> *source,
-                      matrix::Bccoo<ValueType, IndexType> *result,
-                      size_type block_size) GKO_NOT_IMPLEMENTED;
-/* */
+                      matrix::Bccoo<ValueType, IndexType> *result)
+    GKO_NOT_IMPLEMENTED;
+/*
 {
     auto num_rows = result->get_size()[0];
     const auto nnz = result->get_num_stored_elements();
