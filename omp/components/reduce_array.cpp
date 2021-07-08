@@ -30,83 +30,34 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************<GINKGO LICENSE>*******************************/
 
-#include <ginkgo/core/base/array.hpp>
-
-
-#include <ginkgo/core/base/math.hpp>
-
-
-#include "core/components/fill_array.hpp"
-#include "core/components/precision_conversion.hpp"
 #include "core/components/reduce_array.hpp"
 
 
 namespace gko {
-namespace conversion {
-
-
-GKO_REGISTER_OPERATION(convert, components::convert_precision);
-
-
-}  // namespace conversion
-
-
-namespace array {
-
-
-GKO_REGISTER_OPERATION(fill_array, components::fill_array);
-GKO_REGISTER_OPERATION(reduce_array, components::reduce_array);
-
-
-}  // namespace array
-
-
-namespace detail {
-
-
-template <typename SourceType, typename TargetType>
-void convert_data(std::shared_ptr<const Executor> exec, size_type size,
-                  const SourceType *src, TargetType *dst)
-{
-    exec->run(conversion::make_convert(size, src, dst));
-}
-
-
-#define GKO_DECLARE_ARRAY_CONVERSION(From, To)                              \
-    void convert_data<From, To>(std::shared_ptr<const Executor>, size_type, \
-                                const From *, To *)
-
-GKO_INSTANTIATE_FOR_EACH_VALUE_CONVERSION(GKO_DECLARE_ARRAY_CONVERSION);
-
-
-}  // namespace detail
+namespace kernels {
+namespace omp {
+namespace components {
 
 
 template <typename ValueType>
-void Array<ValueType>::fill(const ValueType value)
+void reduce_array(std::shared_ptr<const DefaultExecutor> exec,
+                  const ValueType *array, size_type n, ValueType *val)
 {
-    this->get_executor()->run(
-        array::make_fill_array(this->get_data(), this->get_num_elems(), value));
+    ValueType out = *val;
+#pragma omp declare reduction(add:ValueType : omp_out = omp_out + omp_in)
+
+#pragma omp parallel for reduction(add : out)
+    for (size_type i = 0; i < n; ++i) {
+        out += array[i];
+    }
+
+    *val = out;
 }
 
-
-template <typename ValueType>
-void Array<ValueType>::reduce(ValueType *value) const
-{
-    this->get_executor()->run(array::make_reduce_array(
-        this->get_const_data(), this->get_num_elems(), value));
-}
+GKO_INSTANTIATE_FOR_EACH_TEMPLATE_TYPE(GKO_DECLARE_REDUCE_ARRAY_KERNEL);
 
 
-#define GKO_DECLARE_ARRAY_FILL(_type) void Array<_type>::fill(const _type value)
-
-GKO_INSTANTIATE_FOR_EACH_TEMPLATE_TYPE(GKO_DECLARE_ARRAY_FILL);
-
-
-#define GKO_DECLARE_ARRAY_REDUCE(_type) \
-    void Array<_type>::reduce(_type *value) const
-
-GKO_INSTANTIATE_FOR_EACH_TEMPLATE_TYPE(GKO_DECLARE_ARRAY_REDUCE);
-
-
+}  // namespace components
+}  // namespace omp
+}  // namespace kernels
 }  // namespace gko
