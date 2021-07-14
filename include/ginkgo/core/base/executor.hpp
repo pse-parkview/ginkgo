@@ -544,11 +544,13 @@ public:
      * @tparam ClosureOmp  type of op_omp
      * @tparam ClosureCuda  type of op_cuda
      * @tparam ClosureHip  type of op_hip
+     * @tparam ClosureDpcpp  type of op_dpcpp
      *
      * @param op_omp  functor to run in case of a OmpExecutor or
      *                ReferenceExecutor
      * @param op_cuda  functor to run in case of a CudaExecutor
      * @param op_hip  functor to run in case of a HipExecutor
+     * @param op_dpcpp  functor to run in case of a DpcppExecutor
      */
     template <typename ClosureOmp, typename ClosureCuda, typename ClosureHip,
               typename ClosureDpcpp>
@@ -567,12 +569,14 @@ public:
      * @tparam ClosureOmp  type of op_omp
      * @tparam ClosureCuda  type of op_cuda
      * @tparam ClosureHip  type of op_hip
+     * @tparam ClosureDpcpp  type of op_dpcpp
      *
      * @param name  the name to be used for the underlying operation
      * @param op_omp  functor to run in case of a OmpExecutor or
      *                ReferenceExecutor
      * @param op_cuda  functor to run in case of a CudaExecutor
      * @param op_hip  functor to run in case of a HipExecutor
+     * @param op_dpcpp  functor to run in case of a DpcppExecutor
      */
     template <typename ClosureOmp, typename ClosureCuda, typename ClosureHip,
               typename ClosureDpcpp>
@@ -945,7 +949,8 @@ private:
      * Operation.
      *
      * The first object is called by the OmpExecutor, the second one by the
-     * CudaExecutor and the last one by the HipExecutor. When run on the
+     * CudaExecutor, the third one by the HipExecutor and the last one by
+     * the DpcppExecutor. When run on the
      * ReferenceExecutor, the implementation will launch the OpenMP version.
      *
      * @tparam ClosureOmp  the type of the first functor
@@ -1007,9 +1012,9 @@ private:
      * Operation with a custom name.
      *
      * The first object is called by the OmpExecutor, the second one by the
-     * CudaExecutor and the last one by the HipExecutor. When run on the
-     * ReferenceExecutor, the implementation will launch the CPU reference
-     * version.
+     * CudaExecutor, the third one by the HipExecutor and the last one by
+     * the DpcppExecutor. When run on the ReferenceExecutor, the
+     * implementation will launch the OpenMP version.
      *
      * @tparam ClosureOmp  the type of the first functor
      * @tparam ClosureCuda  the type of the second functor

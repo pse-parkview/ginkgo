@@ -138,6 +138,7 @@ TEST(OmpExecutor, RunsCorrectNamedLambdaOperation)
     omp->add_logger(std::make_shared<OperationNameLogger>(omp, name));
 
     omp->run_named("name", omp_lambda, cuda_lambda, hip_lambda, dpcpp_lambda);
+
     ASSERT_EQ(1, value);
     ASSERT_EQ("name", name);
 }
@@ -282,6 +283,7 @@ TEST(ReferenceExecutor, RunsCorrectNamedLambdaOperation)
     ref->add_logger(std::make_shared<OperationNameLogger>(ref, name));
 
     ref->run_named("name", omp_lambda, cuda_lambda, hip_lambda, dpcpp_lambda);
+
     ASSERT_EQ(1, value);
     ASSERT_EQ("name", name);
 }
@@ -428,6 +430,7 @@ TEST(CudaExecutor, RunsCorrectNamedLambdaOperation)
     cuda->add_logger(std::make_shared<OperationNameLogger>(cuda, name));
 
     cuda->run_named("name", omp_lambda, cuda_lambda, hip_lambda, dpcpp_lambda);
+
     ASSERT_EQ(2, value);
     ASSERT_EQ("name", name);
 }
@@ -519,6 +522,7 @@ TEST(HipExecutor, RunsCorrectNamedLambdaOperation)
     hip->add_logger(std::make_shared<OperationNameLogger>(hip, name));
 
     hip->run_named("name", omp_lambda, cuda_lambda, hip_lambda, dpcpp_lambda);
+
     ASSERT_EQ(3, value);
     ASSERT_EQ("name", name);
 }
@@ -609,6 +613,7 @@ TEST(DpcppExecutor, RunsCorrectNamedLambdaOperation)
     dpcpp->add_logger(std::make_shared<OperationNameLogger>(dpcpp, name));
 
     dpcpp->run_named("name", omp_lambda, cuda_lambda, hip_lambda, dpcpp_lambda);
+
     ASSERT_EQ(4, value);
     ASSERT_EQ("name", name);
 }
