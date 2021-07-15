@@ -33,8 +33,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ginkgo/core/solver/multigrid.hpp>
 
 
+#include <chrono>
 #include <complex>
-
+#include <iomanip>
+#include <iostream>
+#include <string>
 
 #include <ginkgo/core/base/exception.hpp>
 #include <ginkgo/core/base/exception_helpers.hpp>
@@ -52,6 +55,27 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "core/solver/ir_kernels.hpp"
 #include "core/solver/multigrid_kernels.hpp"
 
+namespace {
+
+auto tic(std::shared_ptr<const gko::Executor> exec)
+{
+    exec->synchronize();
+    return std::chrono::steady_clock::now();
+}
+
+
+void toc(std::shared_ptr<const gko::Executor> exec,
+         std::chrono::time_point<std::chrono::steady_clock> start,
+         std::string name)
+{
+    exec->synchronize();
+    auto stop = std::chrono::steady_clock::now();
+    std::chrono::duration<double> duration_time = stop - start;
+    std::cout << name << " " << duration_time.count() << std::endl;
+}
+
+
+}  // namespace
 
 namespace gko {
 namespace solver {
@@ -309,9 +333,14 @@ struct MultigridState {
                        mid_case == multigrid::mid_smooth_type::pre_smoother;
         if (use_pre && pre_smoother) {
             pre_smoother->apply(b, x);
-            // compute residual
+            // additional residual computation after pre_smoother if it already
+            // contained the residual.
+            auto pre_extra_res_start = tic(multigrid->get_executor());
             r->copy_from(b);  // n * b
             matrix->apply(neg_one, x, one, r.get());
+            toc(multigrid->get_executor(), pre_extra_res_start,
+                "additional residual computation after presmoother");
+            // additional residual computation
         } else if (level != 0) {
             // move the residual computation at level 0 to out-of-cycle if there
             // is no pre-smoother at level 0
@@ -603,10 +632,12 @@ void Multigrid::generate()
 
 void Multigrid::apply_impl(const LinOp *b, LinOp *x) const
 {
+    std::cout << std::setprecision(10) << std::scientific;
     auto lambda = [this](auto mg_level, auto b, auto x) {
         using value_type = typename std::decay_t<
             detail::pointee<decltype(mg_level)>>::value_type;
         auto exec = this->get_executor();
+        auto multigrid_start = tic(exec);
         auto neg_one_op =
             initialize<matrix::Dense<value_type>>({-one<value_type>()}, exec);
         auto one_op =
@@ -619,8 +650,14 @@ void Multigrid::apply_impl(const LinOp *b, LinOp *x) const
         exec->run(multigrid::make_initialize(&stop_status));
         // compute the residual at the r_list(0);
         auto r = state.r_list.at(0);
+        // Multigrid additional residual
+        std::cout.precision(10);
+        auto mg_extra_res_start = tic(exec);
         r->copy_from(b);
         system_matrix_->apply(lend(neg_one_op), x, lend(one_op), r.get());
+        toc(exec, mg_extra_res_start,
+            "multigrid additional residual computation");
+        // Multigrid additional residual
         auto stop_criterion = stop_criterion_factory_->generate(
             system_matrix_,
             std::shared_ptr<const LinOp>(b, null_deleter<const LinOp>{}), x,
@@ -636,6 +673,7 @@ void Multigrid::apply_impl(const LinOp *b, LinOp *x) const
                     .solution(x)
                     .check(RelativeStoppingId, true, &stop_status,
                            &one_changed)) {
+                toc(exec, multigrid_start, "multigrid_apply");
                 break;
             }
 
