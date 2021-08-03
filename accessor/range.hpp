@@ -52,6 +52,12 @@ public:
     using accessor = Accessor;
 
     /**
+     * The arithmetic type (type used for arithmetic operations).
+     * TODO: Might not be necessary, but useful!
+     */
+    // using arithmetic_type = typename Accessor::arithmetic_type;
+
+    /**
      * The number of dimensions of the range.
      */
     static constexpr size_type dimensionality = accessor::dimensionality;
@@ -70,7 +76,7 @@ public:
      * @param params  parameters forwarded to Accessor constructor.
      */
     template <typename... AccessorParams>
-    GKO_ACC_ATTRIBUTES constexpr explicit range(AccessorParams &&... params)
+    GKO_ACC_ATTRIBUTES constexpr explicit range(AccessorParams &&...params)
         : accessor_{std::forward<AccessorParams>(params)...}
     {}
 
@@ -90,9 +96,8 @@ public:
      *         given index_spans.
      */
     template <typename... DimensionTypes>
-    GKO_ACC_ATTRIBUTES constexpr auto operator()(
-        DimensionTypes &&... dimensions) const
-        -> decltype(std::declval<accessor>()(
+    GKO_ACC_ATTRIBUTES constexpr auto operator()(DimensionTypes &&...dimensions)
+        const -> decltype(std::declval<accessor>()(
             std::forward<DimensionTypes>(dimensions)...))
     {
         static_assert(sizeof...(dimensions) <= dimensionality,
