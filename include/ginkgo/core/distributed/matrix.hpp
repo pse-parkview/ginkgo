@@ -69,10 +69,21 @@ public:
     using index_type = global_index_type;
     using local_index_type = LocalIndexType;
 
+    /**
+     *
+     * @param data  matrix_data of the global matrix, needs to have global size
+     * @param partition
+     */
     void read_distributed(
         const matrix_data<ValueType, global_index_type> &data,
         std::shared_ptr<const Partition<local_index_type>> partition);
 
+    /**
+     *
+     * @param data
+     * @param size  the global size of the matrix
+     * @param partition
+     */
     void read_distributed(
         const Array<matrix_data_entry<ValueType, global_index_type>> &data,
         dim<2> size,

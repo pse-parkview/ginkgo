@@ -112,11 +112,10 @@ void build_local(
         if (row_range.part != local_part) {
             continue;
         }
-        local_data.get_data()[idx] = {
-            // map global row idx to local row idx
-            static_cast<LocalIndexType>(entry.row - row_range.begin +
-                                        row_range.base_rank),
-            static_cast<LocalIndexType>(entry.column), entry.value};
+        local_data.get_data()[idx] = {// map global row idx to local row idx
+                                      map_to_local(entry.row, row_range),
+                                      static_cast<LocalIndexType>(entry.column),
+                                      entry.value};
         idx++;
     }
 }
