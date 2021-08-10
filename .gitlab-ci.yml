@@ -908,7 +908,7 @@ sonarqube_cov_:
 sonarqube_cov:
   stage: code_quality
   extends:
-    - .deploy_condition
+    - .long_living_branch_condition
     - .use_gko-cuda101-gnu8-llvm7-intel2019
   before_script: *default_before_script
   script:
