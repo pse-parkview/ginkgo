@@ -141,7 +141,7 @@ void run_kernel_reduction(std::shared_ptr<const CudaExecutor> exec,
                           KernelFunction fn, ReductionOp op,
                           FinalizeOp finalize, ValueType init,
                           ValueType *result, size_type size,
-                          KernelArgs &&...args)
+                          KernelArgs &&... args)
 {
     constexpr int oversubscription = 16;
     gko::cuda::device_guard guard{exec->get_device_id()};
@@ -172,7 +172,7 @@ template <typename ValueType, typename KernelFunction, typename ReductionOp,
 void run_kernel_reduction(std::shared_ptr<const CudaExecutor> exec,
                           KernelFunction fn, ReductionOp op,
                           FinalizeOp finalize, ValueType init,
-                          ValueType *result, dim<2> size, KernelArgs &&...args)
+                          ValueType *result, dim<2> size, KernelArgs &&... args)
 {
     constexpr int oversubscription = 16;
     gko::cuda::device_guard guard{exec->get_device_id()};
@@ -227,7 +227,9 @@ __global__
         partial = op(partial, fn(row, col, args...));
     }
     partial = reduce(subwarp, partial, op);
-    result[(row + col_block * rows) * result_stride] = finalize(partial);
+    if (subwarp.thread_rank() == 0) {
+        result[(row + col_block * rows) * result_stride] = finalize(partial);
+    }
 }
 
 
@@ -432,7 +434,7 @@ void run_kernel_row_reduction(std::shared_ptr<const CudaExecutor> exec,
                               KernelFunction fn, ReductionOp op,
                               FinalizeOp finalize, ValueType init,
                               ValueType *result, size_type result_stride,
-                              dim<2> size, KernelArgs &&...args)
+                              dim<2> size, KernelArgs &&... args)
 {
     using subwarp_sizes =
         syn::value_list<int, 1, 2, 4, 8, 16, 32, config::warp_size>;
@@ -479,7 +481,7 @@ void run_kernel_col_reduction(std::shared_ptr<const CudaExecutor> exec,
                               KernelFunction fn, ReductionOp op,
                               FinalizeOp finalize, ValueType init,
                               ValueType *result, dim<2> size,
-                              KernelArgs &&...args)
+                              KernelArgs &&... args)
 {
     using subwarp_sizes =
         syn::value_list<int, 1, 2, 4, 8, 16, 32, config::warp_size>;
